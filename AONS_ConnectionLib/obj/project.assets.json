@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Projects\\CSharp\\AONS_ConnectionLib\\AONS_ConnectionLib\\AONS_ConnectionLib.csproj",
+      "projectUniqueName": "D:\\Projects\\CSharp\\AONS_ConnectionLib_master\\AONS_ConnectionLib\\AONS_ConnectionLib\\AONS_ConnectionLib.csproj",
       "projectName": "AONS_ConnectionLib",
-      "projectPath": "D:\\Projects\\CSharp\\AONS_ConnectionLib\\AONS_ConnectionLib\\AONS_ConnectionLib.csproj",
+      "projectPath": "D:\\Projects\\CSharp\\AONS_ConnectionLib_master\\AONS_ConnectionLib\\AONS_ConnectionLib\\AONS_ConnectionLib.csproj",
       "packagesPath": "C:\\Users\\mrans\\.nuget\\packages\\",
-      "outputPath": "D:\\Projects\\CSharp\\AONS_ConnectionLib\\AONS_ConnectionLib\\obj\\",
+      "outputPath": "D:\\Projects\\CSharp\\AONS_ConnectionLib_master\\AONS_ConnectionLib\\AONS_ConnectionLib\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\mrans\\AppData\\Roaming\\NuGet\\NuGet.Config",

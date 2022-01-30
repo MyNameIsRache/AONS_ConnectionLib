@@ -8,172 +8,68 @@ using System.Text;
 
 namespace AONS_ConnectionLib
 {
-    public delegate void ReceivedMessageDel(DataPacket pDP);
-    public delegate void ReceivedFileDel(string pFilepath);
-
-    public class TcpHandler : IDisposable
+    public class TcpHandler : BaseHandler, IDisposable
     {
-        const int PACKET_SIZE = 4096;
-        //const int PACKET_SIZE = 100;
-
-        #region Receiver
-        public bool IsListenerStopped { get; private set; } = true;
-        bool _KeepListenerRunning = false;
         TcpListener? _Listener;
-        ReceivedMessageDel? _ReceivedMessageDel;
-        ReceivedFileDel? _ReceivedFileDel;
-        int DefaultPort { get; set; } = 30000;
 
-        public string DownloadPath { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
-        #endregion
-
-        #region Sender
-        public IPAddress DestinationIP { get; set; } = null!;
-        public int DestinationPort { get; set; } = 30000;
-
-        public void SetDestination(string pDestIP, int pDestPort)
-        {
-            DestinationIP = IPAddress.Parse(pDestIP);
-            DestinationPort = pDestPort;
-        }
-        #endregion
-
+#pragma warning disable CS8764 // Nullability of return type doesn't match overridden member (possibly because of nullability attributes).
+        protected override object? GetListener => _Listener;
+#pragma warning restore CS8764 // Nullability of return type doesn't match overridden member (possibly because of nullability attributes).
 
         private TcpHandler()
         {
 
         }
 
-        public TcpHandler(ReceivedMessageDel pRcvMessageDel, ReceivedFileDel pRcvFileDel, int pPort = 30000)
+        public TcpHandler(int pPort = 30000)
         {
-            _ReceivedMessageDel = pRcvMessageDel;
-            _ReceivedFileDel = pRcvFileDel;
-            CreateListener(pPort);
+            Port = pPort;
+
+            CreateListener();
         }
 
-        public void CreateListener(int pPort)
+        protected override void CreateListener()
         {
-            _Listener = new TcpListener(IPAddress.Any, pPort);
+            _Listener = new TcpListener(IPAddress.Any, Port);
         }
 
-        public void StartListener()
+        protected override void DoListenerLoop()
         {
-            if (_Listener == null)
-                CreateListener(DefaultPort);
-
-            new TaskFactory().StartNew(() =>
-            {
-                _KeepListenerRunning = true;
+            _KeepListenerRunning = true;
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-                _Listener.Start();
+            _Listener.Start();
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
-                IsListenerStopped = false;
+            IsListenerStopped = false;
 
-                //try catch in case the listener was stopped
-                //but this function still tried to call the pending function
-                try
-                {
-                    while (_KeepListenerRunning)
-                    {
-                        if (_Listener.Pending())
-                            ReadConnection(_Listener.AcceptTcpClient());
-                        else
-                            Thread.Sleep(100);
-                    }
-                }
-                catch { }
-
-                _Listener.Stop();
-                IsListenerStopped = true;
-            });
-        }
-
-        public void StopListener()
-        {
-            _KeepListenerRunning = false;
-        }
-
-        private async void ReadConnection(TcpClient pClient)
-        {
-            await new TaskFactory().StartNew(() =>
+            //try catch in case the listener was stopped
+            //but this function still tried to call the pending function
+            try
             {
-                bool isFileTransmission = false;
-                string? fileName = null;
-                int curPart = 0;
-                int mParts = 0;
-
-                var ns = pClient.GetStream();
-                do
+                while (_KeepListenerRunning)
                 {
-                    var pDP = DataPacket.CreateDataPacket(ns);
-                    curPart = pDP.Part;
-                    mParts = pDP.M_Part;
-                    if (pDP.PacketType == DataPacketType.File)
-                    {
-                        isFileTransmission = true;
-                        HandleFileTransmission(pDP, ref fileName);
-                    }
+                    if (_Listener.Pending())
+                        HandleTcpClient(_Listener.AcceptTcpClient());
                     else
-                        _ReceivedMessageDel?.Invoke(pDP);
-                } while (curPart < mParts);
-
-                if (isFileTransmission)
-                {
-#pragma warning disable CS8604 // Possible null reference argument.
-                    BuildFile(fileName);
-#pragma warning restore CS8604 // Possible null reference argument.
-                    _ReceivedFileDel?.Invoke(Path.Combine(DownloadPath, fileName));
-                }
-
-                pClient.Dispose();
-            });
-        }
-
-        private void BuildFile(string pFilename)
-        {
-            using (FileStream fs = new FileStream(Path.Combine(DownloadPath, pFilename), FileMode.Create, FileAccess.Write))
-            {
-                foreach (var file in Directory.GetFiles(DownloadPath, $"{pFilename}_part(*).tmp")
-                    .OrderBy(pX =>
-                    {
-                        int _Part = 0;
-                        int startIdx = pX.LastIndexOf('(');
-                        int destIdx = pX.LastIndexOf(')');
-                        if (!int.TryParse(pX.Substring(startIdx + 1, destIdx - (startIdx + 1)), out _Part))
-                            return -1;
-                        return _Part;
-                    }))
-                {
-                    using (FileStream fsRead = new FileStream(file, FileMode.Open, FileAccess.Read))
-                    {
-                        byte[] buffer = new byte[fsRead.Length];
-                        fsRead.Read(buffer, 0, buffer.Length);
-                        fs.Write(buffer, 0, buffer.Length);
-                        fs.Flush();
-                    }
-                    File.Delete(file);
+                        Thread.Sleep(100);
                 }
             }
+            catch { }
+            _Listener.Stop();
         }
 
         /// <summary>
-        /// function to handle the receiving part of an file
+        /// await the reading of the connection and dispose the client afterwards
         /// </summary>
-        /// <param name="pDP"></param>
-        /// <param name="pFilename"></param>
-        private void HandleFileTransmission(DataPacket pDP, ref string? pFilename)
+        /// <param name="pClient"></param>
+        protected async void HandleTcpClient(TcpClient pClient)
         {
-            //first message should contain a file name as message
-            if (pFilename == null)
-                pFilename = Encoding.Default.GetString(pDP.Data);
-            else
-            {
-                using (FileStream fs = new FileStream(Path.Combine(DownloadPath, $"{pFilename}_part({pDP.Part}).tmp"), FileMode.Append, FileAccess.Write))
-                {
-                    fs.Write(pDP.Data, 0, pDP.Data.Length);
-                    fs.Flush();
-                }
-            }
+            await ReadConnection(pClient.GetStream());
+            pClient.Dispose();
+        }
+
+        public override void StopListener()
+        {
+            _KeepListenerRunning = false;
         }
 
         public void SendMessage(DataPacketType pPacketType, int pPart, int pMPart, byte[] pData)
@@ -206,6 +102,8 @@ namespace AONS_ConnectionLib
             if (IPAddress.TryParse(pDestIP, out IPAddress pAddress))
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
                 SendMessage(pAddress, pDestPort, pMessage);
+            else
+                throw new IPInvalidException($"Was not able to parse {pDestIP}");
         }
 
         public static void SendMessage(IPAddress pDestIP, int pDestPort, string pMessage)
@@ -266,8 +164,7 @@ namespace AONS_ConnectionLib
         public static void SendMessage(TcpClient pClient, byte pPacketType, int pPart, int pMaxPart, byte[] pData)
         {
             var ns = pClient.GetStream();
-            new DataPacket { PacketType = (DataPacketType)pPacketType, Part = pPart, M_Part = pMaxPart, Data = pData }.WriteToStream(ns);
-            ns.Flush();
+            SendMessage(ns, pPacketType, pPart, pMaxPart, pData);
         }
 
         public static bool SendFile(string pDestIP, int pDestPort, string pFileName)

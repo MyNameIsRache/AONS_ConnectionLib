@@ -47,21 +47,72 @@ namespace AONS_ConnectionLib.Structures
 
         public DataPacket(string pData) : this()
         {
+            PacketType = DataPacketType.Message;
+            Part = 1;
+            M_Part = 1;
             Data = Encoding.Default.GetBytes(pData);
         }
 
         public void WriteToStream(Stream pStream)
         {
-            CreateXML_AsStream(pStream, this);
+            CreateMessage_AsStream(pStream, this);
         }
 
-        public static DataPacket CreateDataPacket(Stream pStream)
+        public byte[] WriteToByteArr()
+        {
+            return CreateMessage_AsByteArr(this);
+        }
+
+        private static DataPacket CreateDataPacket(string[] pOverhead, byte[] msg)
         {
             DataPacket packet = new DataPacket();
+            packet.PacketType = (DataPacketType)byte.Parse(pOverhead[0]);
+            packet.Part = int.Parse(pOverhead[1]);
+            packet.M_Part = int.Parse(pOverhead[2]);
+
+            packet.Data = msg;
+
+            return packet;
+        }
+
+        /// <summary>
+        /// Create a Datapacket with the message byte array
+        /// </summary>
+        /// <param name="pMessage"></param>
+        /// <returns></returns>
+        public static DataPacket CreateDataPacket(byte[] pMessage)
+        {
+            int idx = 0;
+
+            //Step 1, read overhead
+            for (int pipeCount = 0, lng = pMessage.Length; pipeCount < 4 && idx < lng; idx++)  //0 - PacketType, 1 - Part, 2 - Max Part, 3 - DataLength, 4 - Data
+            {
+                if (pMessage[idx] == (byte)'|')
+                    pipeCount++;
+            }
+
+            //Step 2, split off the message in overhead and message
+            //todo: have to actually test if the dimensions are correct
+            byte[] _overhead = new byte[idx];
+            Array.Copy(pMessage, _overhead, idx);
+            int msgSize = pMessage.Length - idx;
+            byte[] _msg = new byte[msgSize];
+            Array.Copy(pMessage, idx, _msg, 0, msgSize);
+
+            //Step 3, create the datapacket with the help of the arrays
+            return CreateDataPacket(Encoding.Default.GetString(_overhead).Split('|'), _msg);
+        }
+
+        /// <summary>
+        /// Create a Datapacket with a stream
+        /// </summary>
+        /// <param name="pStream"></param>
+        /// <returns></returns>
+        public static DataPacket CreateDataPacket(Stream pStream)
+        {
             List<byte> msg = new List<byte>();
             int curByte = 0;
             byte pipeCount = 0;
-            int pDataLength = 0;
 
             //Step 1, read overhead
             while (pipeCount < 4) //0 - PacketType, 1 - Part, 2 - Max Part, 3 - DataLength, 4 - Data
@@ -73,18 +124,16 @@ namespace AONS_ConnectionLib.Structures
                     pipeCount++;
             }
 
-            //Step 2, write overhead into corresponding variables
+            //Step 2, split overhead to read corresponding datalength
             string[] splits = Encoding.Default.GetString(msg.ToArray()).Split('|');
-            packet.PacketType = (DataPacketType)byte.Parse(splits[0]);
-            packet.Part = int.Parse(splits[1]);
-            packet.M_Part = int.Parse(splits[2]);
-            pDataLength = int.Parse(splits[3]);
+            int pDataLength = int.Parse(splits[3]);
 
             //Step 3, read the real data with the given overhead length
-            packet.Data = new byte[pDataLength];
-            pStream.Read(packet.Data, 0, pDataLength);
+            byte[] pData = new byte[pDataLength];
+            pStream.Read(pData, 0, pDataLength);
 
-            return packet;
+            //Step 4, create the datapacket for further usage
+            return CreateDataPacket(splits, pData);
         }
 
         public override string ToString()
@@ -94,7 +143,7 @@ namespace AONS_ConnectionLib.Structures
 
         public static string CreateXML_AsString(DataPacket pDP)
         {
-            using (Stream ms = CreateXML_AsStream(pDP))
+            using (Stream ms = CreateMessage_AsStream(pDP))
             {
                 StreamReader reader = new StreamReader(ms);
                 ms.Position = 0;
@@ -102,16 +151,28 @@ namespace AONS_ConnectionLib.Structures
             }
         }
 
-        public static Stream CreateXML_AsStream(DataPacket pDP)
+        public static Stream CreateMessage_AsStream(DataPacket pDP)
         {
             Stream ret = new MemoryStream();
-            CreateXML_AsStream(ret, pDP);
+            CreateMessage_AsStream(ret, pDP);
             return ret;
         }
 
-        public static void CreateXML_AsStream(Stream pStream, DataPacket pDP)
+        private static byte[] CreateMessage_Overhead(DataPacket pDP)
         {
-            byte[] buffer = Encoding.Default.GetBytes($"{(int)pDP.PacketType}|{pDP.Part}|{pDP.M_Part}|{pDP.Data.Length}|");
+            return Encoding.Default.GetBytes($"{(int)pDP.PacketType}|{pDP.Part}|{pDP.M_Part}|{pDP.Data.Length}|");
+        }
+
+        public static byte[] CreateMessage_AsByteArr(DataPacket pDP)
+        {
+            List<byte> bArr = new List<byte>(CreateMessage_Overhead(pDP));
+            bArr.AddRange(pDP.Data);
+            return bArr.ToArray();
+        }
+
+        public static void CreateMessage_AsStream(Stream pStream, DataPacket pDP)
+        {
+            byte[] buffer = CreateMessage_Overhead(pDP);
             int origLength = buffer.Length;
             Array.Resize(ref buffer, buffer.Length + pDP.Data.Length);
             Array.Copy(pDP.Data, 0, buffer, origLength, pDP.Data.Length);

@@ -10,3 +10,15 @@ D:\Projects\CSharp\AONS_ConnectionLib\AONS_ConnectionLib\obj\Debug\net6.0\AONS_C
 D:\Projects\CSharp\AONS_ConnectionLib\AONS_ConnectionLib\obj\Debug\net6.0\AONS_ConnectionLib.dll
 D:\Projects\CSharp\AONS_ConnectionLib\AONS_ConnectionLib\obj\Debug\net6.0\ref\AONS_ConnectionLib.dll
 D:\Projects\CSharp\AONS_ConnectionLib\AONS_ConnectionLib\obj\Debug\net6.0\AONS_ConnectionLib.pdb
+D:\Projects\CSharp\AONS_ConnectionLib_master\AONS_ConnectionLib\AONS_ConnectionLib\bin\Debug\net6.0\AONS_ConnectionLib.deps.json
+D:\Projects\CSharp\AONS_ConnectionLib_master\AONS_ConnectionLib\AONS_ConnectionLib\bin\Debug\net6.0\AONS_ConnectionLib.dll
+D:\Projects\CSharp\AONS_ConnectionLib_master\AONS_ConnectionLib\AONS_ConnectionLib\bin\Debug\net6.0\ref\AONS_ConnectionLib.dll
+D:\Projects\CSharp\AONS_ConnectionLib_master\AONS_ConnectionLib\AONS_ConnectionLib\bin\Debug\net6.0\AONS_ConnectionLib.pdb
+D:\Projects\CSharp\AONS_ConnectionLib_master\AONS_ConnectionLib\AONS_ConnectionLib\obj\Debug\net6.0\AONS_ConnectionLib.csproj.AssemblyReference.cache
+D:\Projects\CSharp\AONS_ConnectionLib_master\AONS_ConnectionLib\AONS_ConnectionLib\obj\Debug\net6.0\AONS_ConnectionLib.GeneratedMSBuildEditorConfig.editorconfig
+D:\Projects\CSharp\AONS_ConnectionLib_master\AONS_ConnectionLib\AONS_ConnectionLib\obj\Debug\net6.0\AONS_ConnectionLib.AssemblyInfoInputs.cache
+D:\Projects\CSharp\AONS_ConnectionLib_master\AONS_ConnectionLib\AONS_ConnectionLib\obj\Debug\net6.0\AONS_ConnectionLib.AssemblyInfo.cs
+D:\Projects\CSharp\AONS_ConnectionLib_master\AONS_ConnectionLib\AONS_ConnectionLib\obj\Debug\net6.0\AONS_ConnectionLib.csproj.CoreCompileInputs.cache
+D:\Projects\CSharp\AONS_ConnectionLib_master\AONS_ConnectionLib\AONS_ConnectionLib\obj\Debug\net6.0\AONS_ConnectionLib.dll
+D:\Projects\CSharp\AONS_ConnectionLib_master\AONS_ConnectionLib\AONS_ConnectionLib\obj\Debug\net6.0\ref\AONS_ConnectionLib.dll
+D:\Projects\CSharp\AONS_ConnectionLib_master\AONS_ConnectionLib\AONS_ConnectionLib\obj\Debug\net6.0\AONS_ConnectionLib.pdb
